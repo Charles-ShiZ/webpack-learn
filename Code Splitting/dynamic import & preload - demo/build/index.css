@@ -1,0 +1,8 @@
+@font-face
+{
+  font-family: HYQiHeiY1;
+  src: url('./AgencyFB-Bold.ttf');
+}
+body{
+    font-family: HYQiHeiY1;
+}
