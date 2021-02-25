@@ -7,12 +7,8 @@
 2. 配置 dependOn
 3. 动态导入
 4. preload与prefetch
-(大部分场景下无需特意使用preload
-类似字体文件这种隐藏在脚本、样式中的首屏关键资源，建议使用preload
-异步加载的模块（典型的如单页系统中的非首页）建议使用prefetch
-大概率即将被访问到的资源可以使用prefetch提升性能和体验)
 
-### 目录结构
+### 目录和代码-预知
 ```js
 webpack-demo
 |- package.json
@@ -23,9 +19,6 @@ webpack-demo
  |- another-module.js
 |- /node_modules
 ```
-
-### 方法一：配置入口起点
-#### 如何实现：
 index.js
 ```js
 import _ from 'lodash';
@@ -37,6 +30,9 @@ another-module.js
 import _ from 'lodash';
 console.log(_.join(['Another', 'module', 'loaded!'], ' '));
 ```
+
+### 方法一：配置入口起点
+#### 如何实现：
 
 webpack.config.js
 ```js
@@ -81,3 +77,101 @@ npm run build 之后查看dist文件夹，发现webpack为lodash模块单独生�
 
 #### 缺点：
 不够灵活，不能动态地将核心应用程序逻辑中的代码拆分出来。
+
+
+### 方法二：配置dependOn
+#### 如何实现：
+webpack.config.js
+```js
+ const path = require('path');
+
+ module.exports = {
+   mode: 'development',
+   entry: {
+    index: {
+      import: './src/index.js',
+      dependOn: 'shared',
+    },
+    another: {
+      import: './src/another-module.js',
+      dependOn: 'shared',
+    },
+    shared: 'lodash',
+   },
+   output: {
+     filename: '[name].bundle.js',
+     path: path.resolve(__dirname, 'dist'),
+   },
+   optimization: {
+     runtimeChunk: 'single',
+   }
+ };
+```
+
+### 方法三：动态导入
+#### 如何实现：
+webpack.config.js
+```js
+const path = require('path');
+
+module.exports = {
+   mode: 'development',
+   entry: {
+     index: './src/index.js'
+   },
+   output: {
+     filename: '[name].bundle.js',
+     path: path.resolve(__dirname, 'dist'),
+   }
+}
+```
+src/index.js
+```js
+document.addEventListener('click', async (e)=>{
+    const { default: func } = await import(/* webpackPrefetch: true */'./click');
+    func();
+})
+```
+src/click.js
+```js
+export default () => {
+    const ele = document.createElement('div');
+    ele.innerText = 'Meskjei';
+    document.body.appendChild(ele);
+}
+```
+
+### 方法四：prefetch
+在“方法三：动态导入”的基础上修改src/index.js，添加prefetch标记：（注意：如果打开了浏览器的“检查”，要将 NetWork 中的 Disable cache 关闭）
+```js
+document.addEventListener('click', async (e)=>{
+    const { default: func } = await import(/* webpackPrefetch: true */'./click');
+    func();
+})
+```
+npm start 之后，打开浏览器检查工具的 NetWork ，点击页面，NetWork会出现一个标识为“prefetch cache”的文件，这就表明成功实现了prefetch功能。
+
+#### preload
+准备index.css
+```css
+@font-face
+{
+  font-family: HYQiHeiY1;
+  src: url('./AgencyFB-Bold.ttf');
+}
+body{
+    font-family: HYQiHeiY1;
+}
+```
+然后手动在 index.html 上添加:（"as"指文件类型，如果引入.css则as="style"，引入.js则as="script"。）
+```html
+<link rel="preload" as="font" href="./AgencyFB-Bold.ttf" crossorigin>
+<link type="text/css" rel="styleSheet"  href="./index.css" />
+```
+当通过preload引入字体，点开检查工具NetWork，会发现./AgencyFB-Bold.ttf比./index.css要优先加载了。
+
+#### 对比
+1. 大部分场景下无需特意使用preload
+2. 类似字体文件这种隐藏在脚本、样式中的首屏关键资源，建议使用preload
+3. 异步加载的模块（如单页系统中的非首页模块）建议使用prefetch
+4. 大概率即将被访问到的资源也可以使用prefetch，提升用户体验
