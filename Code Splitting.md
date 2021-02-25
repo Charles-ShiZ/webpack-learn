@@ -34,7 +34,7 @@ console.log(_.join(['Another', 'module', 'loaded!'], ' '));
 ### 方法一：配置入口起点
 #### 如何实现：
 
-webpack.config.js
+配置webpack.config.js
 ```js
 const path = require('path');
 
@@ -52,7 +52,7 @@ module.exports = {
 ```
 npm run build 打包生成 index.bundle.js 和 another.bundle.js，会发现两个文件都包含了lodash代码，明显的代码冗余。
 
-修改webpack.config.js，添加上splitChunks，可以去除重复模块的代码
+修改下webpack.config.js，添加上splitChunks，可以去除重复模块的代码
 ```js
 const path = require('path');
 
@@ -81,7 +81,7 @@ npm run build 之后查看dist文件夹，发现webpack为lodash模块单独生�
 
 ### 方法二：配置dependOn
 #### 如何实现：
-webpack.config.js
+配置webpack.config.js
 ```js
  const path = require('path');
 
@@ -110,7 +110,7 @@ webpack.config.js
 
 ### 方法三：动态导入
 #### 如何实现：
-webpack.config.js
+配置webpack.config.js
 ```js
 const path = require('path');
 
@@ -140,6 +140,7 @@ export default () => {
     document.body.appendChild(ele);
 }
 ```
+这样，webpack会将./click.js单独分离为一个文件，便可以实现懒加载
 
 ### 方法四：prefetch
 在“方法三：动态导入”的基础上修改src/index.js，添加prefetch标记：（注意：如果打开了浏览器的“检查”，要将 NetWork 中的 Disable cache 关闭）
