@@ -8,7 +8,7 @@
 3. 动态导入
 4. preload与prefetch
 
-### 目录和代码-预知
+### 目录结构
 ```js
 webpack-demo
 |- package.json
@@ -19,6 +19,8 @@ webpack-demo
  |- another-module.js
 |- /node_modules
 ```
+### 方法一：配置入口起点
+#### 如何实现：
 index.js
 ```js
 import _ from 'lodash';
@@ -30,9 +32,6 @@ another-module.js
 import _ from 'lodash';
 console.log(_.join(['Another', 'module', 'loaded!'], ' '));
 ```
-
-### 方法一：配置入口起点
-#### 如何实现：
 
 配置webpack.config.js
 ```js
@@ -80,7 +79,20 @@ npm run build 之后查看dist文件夹，发现webpack为lodash模块单独生�
 
 
 ### 方法二：配置dependOn
+配置dependOn将公用模块单独分离成一个文件，这样就避免了重复打包相同模块的问题。
 #### 如何实现：
+index.js
+```js
+import _ from 'lodash';
+console.log(_.join(['1', '2', '3!'], ' '));
+```
+
+another-module.js
+```js
+import _ from 'lodash';
+console.log(_.join(['Another', 'module', 'loaded!'], ' '));
+```
+
 配置webpack.config.js
 ```js
  const path = require('path');
@@ -110,6 +122,23 @@ npm run build 之后查看dist文件夹，发现webpack为lodash模块单独生�
 
 ### 方法三：动态导入
 #### 如何实现：
+src/index.js
+```js
+document.addEventListener('click', async (e)=>{
+    const { default: func } = await import(/* webpackPrefetch: true */'./click');
+    func();
+})
+```
+
+src/click.js
+```js
+export default () => {
+    const ele = document.createElement('div');
+    ele.innerText = 'Meskjei';
+    document.body.appendChild(ele);
+}
+```
+
 配置webpack.config.js
 ```js
 const path = require('path');
@@ -123,21 +152,6 @@ module.exports = {
      filename: '[name].bundle.js',
      path: path.resolve(__dirname, 'dist'),
    }
-}
-```
-src/index.js
-```js
-document.addEventListener('click', async (e)=>{
-    const { default: func } = await import(/* webpackPrefetch: true */'./click');
-    func();
-})
-```
-src/click.js
-```js
-export default () => {
-    const ele = document.createElement('div');
-    ele.innerText = 'Meskjei';
-    document.body.appendChild(ele);
 }
 ```
 这样，webpack会将./click.js单独分离为一个文件，便可以实现懒加载
